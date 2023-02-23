@@ -176,7 +176,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 25
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -218,7 +218,7 @@ GameObject:
   - component: {fileID: 771512540}
   - component: {fileID: 771512539}
   m_Layer: 0
-  m_Name: GameManager
+  m_Name: Board
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -233,17 +233,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 771512538}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c3900c0c1c5435548a7e87f665d30d29, type: 3}
+  m_Script: {fileID: 11500000, guid: e8efe3a0457431b489405206eef27b0f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dropPrefabs:
-  - {fileID: 4083738551655398205, guid: 3bc1ec2a154e9b4499be1040342e0df1, type: 3}
-  - {fileID: 1838390703315071067, guid: 527354c9df9ef0343af6b99ab8b23465, type: 3}
-  - {fileID: 3496192371876335393, guid: 62566d7d5336b4043879a76fbcf7f525, type: 3}
-  - {fileID: 6608458008745903256, guid: 89d3e7b6e3ca3e1438a8643278e6bb6f, type: 3}
-  boardSize: 8
-  minMatches: 3
-  score: 0
+  numRows: 8
+  numCols: 8
+  tileSize: 3
+  drops: {fileID: 1329543456}
+  tilePrefab: {fileID: 8870925932771081323, guid: 4b0457269463b1246a771d3e82424f2c, type: 3}
 --- !u!4 &771512540
 Transform:
   m_ObjectHideFlags: 0
@@ -258,4 +255,55 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1329543455
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1329543457}
+  - component: {fileID: 1329543456}
+  m_Layer: 0
+  m_Name: DropPool
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1329543456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1329543455}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5584a9fd53469ce4eb2e96a854880eef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dropSprites:
+  - {fileID: 21300000, guid: c887067b80d2b3546954e383528742fb, type: 3}
+  - {fileID: 21300000, guid: 6aeba8bda87965d4f9b52196dc6b0592, type: 3}
+  - {fileID: 21300000, guid: e0af11618b93fd84cb7b7f46e72bb72e, type: 3}
+  - {fileID: 21300000, guid: fa6ed13aa77edd84fb34f369f5f711a9, type: 3}
+  dropPrefab: {fileID: 4083738551655398205, guid: 3bc1ec2a154e9b4499be1040342e0df1, type: 3}
+  poolSize: 100
+--- !u!4 &1329543457
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1329543455}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 28.148794, y: 4.145198, z: -0.3961458}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
