@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 public class BoardManager : MonoBehaviour
@@ -36,7 +37,7 @@ public class BoardManager : MonoBehaviour
         tiles = new GameObject[numRows, numCols];
 
         // Calculate the width of the camera view area
-        float cameraWidth = Camera.main.orthographicSize * 2.0f * Camera.main.aspect;
+        float cameraWidth = Camera.main.orthographicSize * 0.3f * Camera.main.aspect;
 
         // Calculate the width of the board
         float boardWidth = numCols * tileSize;
@@ -92,14 +93,71 @@ public class BoardManager : MonoBehaviour
                 GameObject dropObject = drops.GetDrop(dropType);
                 var drop = dropObject.GetComponent<Drop>();
                 drop.SetDrop(row, col, dropType, drops.dropSprites[dropType]);
-                Vector3 position = tiles[row, col].transform.position;
+                Vector3 position = tiles[numRows - 1, col].transform.position + Vector3.up * 5.0f;
                 position.z = -1.0f;
                 drop.transform.position = position;
 
                 // Add the new drop to the drops list
                 dropsList.Add(dropObject);
+                
             }
         }
+        
+        DropAnimations();
+    }
+
+    void DropAnimations()
+    {
+        for (int col = 0; col < numCols; col++)
+        {
+            int numEmpty = 0;
+            for (int row = 0; row < numRows; row++)
+            {
+                if (tiles[row, col].GetComponentInChildren<SpriteRenderer>().sprite == null)
+                {
+                    numEmpty++;
+                }
+                else if (numEmpty > 0)
+                {
+                    // Get the drop at the current position
+                    GameObject drop = GetDropAt(row, col);
+
+                    // Calculate the new row position
+                    int newRow = row - numEmpty;
+
+                    // Calculate the new position for the drop
+                    Vector3 newPosition = tiles[newRow, col].transform.position;
+                    newPosition.z = -1.0f;
+
+                    // Animate the drop falling into place
+                    drop.transform.DOMove(newPosition, 0.2f * numEmpty).SetEase(Ease.InOutCubic);
+
+                    // Update the tile at the new position to match the drop
+                    tiles[newRow, col].GetComponentInChildren<SpriteRenderer>().sprite = drop.GetComponent<SpriteRenderer>().sprite;
+
+                    // Clear the tile at the old position
+                    tiles[row, col].GetComponentInChildren<SpriteRenderer>().sprite = null;
+                }
+            }
+        }
+    }
+    
+    GameObject GetDropAt(int row, int col)
+    {
+        if (row < 0 || row >= numRows || col < 0 || col >= numCols)
+        {
+            return null;
+        }
+
+        foreach (GameObject drop in dropsList)
+        {
+            if (drop.GetComponent<Drop>().row == row && drop.GetComponent<Drop>().col == col)
+            {
+                return drop;
+            }
+        }
+
+        return null;
     }
 
     bool HasMatches()

@@ -10,7 +10,7 @@ public class DropPool : MonoBehaviour
 
     private List<GameObject>[] dropPool;
 
-    void Start()
+    void Awake()
     {
         CreatePool();
     }
