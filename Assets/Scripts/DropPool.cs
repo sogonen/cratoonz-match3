@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class DropPool : MonoBehaviour
@@ -8,7 +9,7 @@ public class DropPool : MonoBehaviour
     public GameObject dropPrefab;
     public int poolSize = 100;
 
-    private List<GameObject>[] dropPool;
+    private List<GameObject> dropPool;
 
     void Awake()
     {
@@ -17,31 +18,25 @@ public class DropPool : MonoBehaviour
 
     void CreatePool()
     {
-        dropPool = new List<GameObject>[dropSprites.Length];
-        for (int i = 0; i < dropSprites.Length; i++)
-        {
-            dropPool[i] = new List<GameObject>();
-            for (int j = 0; j < poolSize; j++)
-            {
-                GameObject drop = Instantiate(dropPrefab, transform);
-                drop.SetActive(false);
-                dropPool[i].Add(drop);
-            }
-        }
+        dropPool = new List<GameObject>();
+        GameObject drop = Instantiate(dropPrefab, transform);
+        drop.SetActive(false);
+        dropPool.Add(drop);
+
     }
 
     public GameObject GetDrop(int dropType)
     {
-        for (int i = 0; i < dropPool[dropType].Count; i++)
+        for (int i = 0; i < dropPool.Count; i++)
         {
-            if (!dropPool[dropType][i].activeInHierarchy)
+            if (!dropPool[i].activeInHierarchy)
             {
-                dropPool[dropType][i].SetActive(true);
-                return dropPool[dropType][i];
+                dropPool[i].SetActive(true);
+                return dropPool[i];
             }
         }
         GameObject dropObject = Instantiate(dropPrefab, transform);
-        dropPool[dropType].Add(dropObject);
+        dropPool.Add(dropObject);
         return dropObject;
     }
 

@@ -239,8 +239,9 @@ MonoBehaviour:
   numRows: 8
   numCols: 8
   tileSize: 3
-  drops: {fileID: 1329543456}
+  dropPool: {fileID: 1329543456}
   tilePrefab: {fileID: 8870925932771081323, guid: 4b0457269463b1246a771d3e82424f2c, type: 3}
+  boardOffset: {x: -10, y: 0}
 --- !u!4 &771512540
 Transform:
   m_ObjectHideFlags: 0

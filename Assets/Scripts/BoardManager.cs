@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class BoardManager : MonoBehaviour
 {
@@ -9,9 +11,11 @@ public class BoardManager : MonoBehaviour
     public int numRows = 8;
     public int numCols = 8;
     public float tileSize = 1.0f;
-    public DropPool drops;
+    public DropPool dropPool;
     public GameObject tilePrefab;
     public GameObject[,] tiles;
+    public GameObject[,] drops;
+    public Vector2 boardOffset = new Vector2(-3.5f, -3.5f);
     private List<GameObject> dropsList;
 
     void Awake()
@@ -35,9 +39,9 @@ public class BoardManager : MonoBehaviour
     void CreateBoard()
     {
         tiles = new GameObject[numRows, numCols];
-
+        drops = new GameObject[numRows, numCols];
         // Calculate the width of the camera view area
-        float cameraWidth = Camera.main.orthographicSize * 0.3f * Camera.main.aspect;
+        float cameraWidth = Camera.main.orthographicSize * 0.2f * Camera.main.aspect;
 
         // Calculate the width of the board
         float boardWidth = numCols * tileSize;
@@ -50,224 +54,99 @@ public class BoardManager : MonoBehaviour
             for (int col = 0; col < numCols; col++)
             {
                 GameObject tile = Instantiate(tilePrefab, transform);
-                tile.transform.position = new Vector3(col * tileSize + xOffset, row * tileSize, 0.0f);
+                tile.transform.position = new Vector3(col * tileSize + xOffset, row * tileSize, 0f);
+                tile.name = "Tile (" + row + ", " + col + ")";
                 tiles[row, col] = tile;
             }
         }
     }
-
+    
+    /* Backtracking algorithm to fill the board */
     void FillBoard()
     {
-        // Create a list to hold the drop types
-        List<int> dropTypes = new List<int>();
+        int[,] boardGraph = new int[numRows, numCols];
 
-        // Add each drop type to the list
-        for (int i = 0; i < drops.dropSprites.Length; i++)
-        {
-            dropTypes.Add(i);
-        }
+        // Fill the board graph using a backtracking algorithm
+        FillBoardBacktrack(boardGraph, 0, 0);
 
-        // Shuffle the list of drop types
-        for (int i = 0; i < dropTypes.Count; i++)
-        {
-            int temp = dropTypes[i];
-            int randomIndex = Random.Range(i, dropTypes.Count);
-            dropTypes[i] = dropTypes[randomIndex];
-            dropTypes[randomIndex] = temp;
-        }
-
-        dropsList = new List<GameObject>();
+        // Assign the board graph to the tiles
         for (int row = 0; row < numRows; row++)
         {
             for (int col = 0; col < numCols; col++)
             {
-                int dropType = -1;
-
-                // Keep selecting a random drop type until it doesn't match any of its neighbors
-                while (dropType == -1 || (col >= 2 && IsMatching(dropType, row, col - 1, row, col - 2)) || (row >= 2 && IsMatching(dropType, row - 1, col, row - 2, col)))
-                {
-                    dropType = dropTypes[Random.Range(0, dropTypes.Count)];
-                }
-
-                // Get a drop object from the pool and set its properties
-                GameObject dropObject = drops.GetDrop(dropType);
-                var drop = dropObject.GetComponent<Drop>();
-                drop.SetDrop(row, col, dropType, drops.dropSprites[dropType]);
-                Vector3 position = tiles[numRows - 1, col].transform.position + Vector3.up * 5.0f;
-                position.z = -1.0f;
-                drop.transform.position = position;
-
-                // Add the new drop to the drops list
-                dropsList.Add(dropObject);
-                
-            }
-        }
-        
-        DropAnimations();
-    }
-
-    void DropAnimations()
-    {
-        for (int col = 0; col < numCols; col++)
-        {
-            int numEmpty = 0;
-            for (int row = 0; row < numRows; row++)
-            {
-                if (tiles[row, col].GetComponentInChildren<SpriteRenderer>().sprite == null)
-                {
-                    numEmpty++;
-                }
-                else if (numEmpty > 0)
-                {
-                    // Get the drop at the current position
-                    GameObject drop = GetDropAt(row, col);
-
-                    // Calculate the new row position
-                    int newRow = row - numEmpty;
-
-                    // Calculate the new position for the drop
-                    Vector3 newPosition = tiles[newRow, col].transform.position;
-                    newPosition.z = -1.0f;
-
-                    // Animate the drop falling into place
-                    drop.transform.DOMove(newPosition, 0.2f * numEmpty).SetEase(Ease.InOutCubic);
-
-                    // Update the tile at the new position to match the drop
-                    tiles[newRow, col].GetComponentInChildren<SpriteRenderer>().sprite = drop.GetComponent<SpriteRenderer>().sprite;
-
-                    // Clear the tile at the old position
-                    tiles[row, col].GetComponentInChildren<SpriteRenderer>().sprite = null;
-                }
+                GameObject tile = tiles[row, col];
+                int dropType = boardGraph[row, col];
+                GameObject drop = dropPool.GetDrop(dropType);
+                drop.transform.SetParent(tiles[row, col].transform);
+                drop.transform.localPosition = new Vector3(0, 0, -1);
+                drops[row, col] = drop;
+                drop.GetComponent<Drop>().SetDrop(row, col, dropType, dropPool.dropSprites[dropType]);
             }
         }
     }
     
-    GameObject GetDropAt(int row, int col)
+    void ShuffleList<T>(List<T> list)
     {
-        if (row < 0 || row >= numRows || col < 0 || col >= numCols)
+        int n = list.Count;
+        while (n > 1)
         {
-            return null;
+            n--;
+            int k = Random.Range(0, n + 1);
+            T temp = list[k];
+            list[k] = list[n];
+            list[n] = temp;
+        }
+    }
+    
+    bool FillBoardBacktrack(int[,] boardGraph, int row, int col)
+    {
+        if (row == numRows)
+        {
+            return true;
         }
 
-        foreach (GameObject drop in dropsList)
+        List<int> dropTypes = new List<int>(new int[] { 0, 1, 2, 3 });
+        ShuffleList(dropTypes);
+
+        for (int i = 0; i < dropTypes.Count; i++)
         {
-            if (drop.GetComponent<Drop>().row == row && drop.GetComponent<Drop>().col == col)
+            boardGraph[row, col] = dropTypes[i];
+
+            if (!HasHorizontalMatch(boardGraph, row, col) && !HasVerticalMatch(boardGraph, row, col))
             {
-                return drop;
+                int nextRow = col == numCols - 1 ? row + 1 : row;
+                int nextCol = (col + 1) % numCols;
+
+                if (FillBoardBacktrack(boardGraph, nextRow, nextCol))
+                {
+                    return true;
+                }
             }
         }
 
-        return null;
-    }
-
-    bool HasMatches()
-    {
-        foreach (GameObject drop in dropsList)
-        {
-            int row = drop.GetComponent<Drop>().row;
-            int col = drop.GetComponent<Drop>().col;
-            if (MatchesAt(row, col, drop)) return true;
-        }
-
+        boardGraph[row, col] = -1;
         return false;
     }
-    
-    bool IsMatching(int dropType, int row1, int col1, int row2, int col2)
+
+    bool HasHorizontalMatch(int[,] boardGraph, int row, int col)
     {
-        // Check if the specified positions are within the bounds of the board
-        if (row1 < 0 || row1 >= numRows || col1 < 0 || col1 >= numCols || row2 < 0 || row2 >= numRows || col2 < 0 || col2 >= numCols)
+        if (col < 2)
         {
             return false;
         }
 
-        // Check if the specified drops match the specified drop type
-        return tiles[row1, col1].GetComponentInChildren<SpriteRenderer>().sprite == drops.dropSprites[dropType] &&
-               tiles[row2, col2].GetComponentInChildren<SpriteRenderer>().sprite == drops.dropSprites[dropType];
+        int dropType = boardGraph[row, col];
+        return dropType == boardGraph[row, col - 1] && dropType == boardGraph[row, col - 2];
     }
 
-    void RemoveMatches()
+    bool HasVerticalMatch(int[,] boardGraph, int row, int col)
     {
-        foreach (GameObject drop in dropsList.ToArray())
+        if (row < 2)
         {
-            int row = drop.GetComponent<Drop>().row;
-            int col = drop.GetComponent<Drop>().col;
-            if (MatchesAt(row, col, drop))
-            {
-                dropsList.Remove(drop);
-                tiles[row, col] = null;
-                drop.GetComponent<Drop>().ScaleAndDestroy();
-            }
-        }
-    }
-
-    public void FillEmptyTiles()
-    {
-        for (int col = 0; col < numCols; col++)
-        {
-            for (int row = 0; row < numRows; row++)
-            {
-                if (tiles[row, col] == null)
-                {
-                    GameObject drop = dropsList[Random.Range(0, dropsList.Count)];
-                    drop.GetComponent<Drop>().MoveTo(row, col);
-                    drop.GetComponent<Drop>().row = row;
-                    drop.GetComponent<Drop>().col = col;
-                    tiles[row, col] = drop;
-                    dropsList.Remove(drop);
-                }
-            }
-        }
-    }
-
-    bool MatchesAt(int row, int col, GameObject drop)
-    {
-        Sprite dropSprite = drop.GetComponent<SpriteRenderer>().sprite;
-
-        // Check for horizontal matches
-        int count = 1;
-        for (int i = col - 1; i >= 0; i--)
-        {
-            GameObject tile = tiles[row, i];
-            if (tile == null) break;
-            Sprite sprite = tile.GetComponentInChildren<SpriteRenderer>()?.sprite;
-            if (sprite == null || sprite != dropSprite) break;
-            count++;
+            return false;
         }
 
-        for (int i = col + 1; i < numCols; i++)
-        {
-            GameObject tile = tiles[row, i];
-            if (tile == null) break;
-            Sprite sprite = tile.GetComponentInChildren<SpriteRenderer>()?.sprite;
-            if (sprite == null || sprite != dropSprite) break;
-            count++;
-        }
-
-        if (count >= 3) return true;
-
-        // Check for vertical matches
-        count = 1;
-        for (int i = row - 1; i >= 0; i--)
-        {
-            GameObject tile = tiles[i, col];
-            if (tile == null) break;
-            Sprite sprite = tile.GetComponentInChildren<SpriteRenderer>()?.sprite;
-            if (sprite == null || sprite != dropSprite) break;
-            count++;
-        }
-
-        for (int i = row + 1; i < numRows; i++)
-        {
-            GameObject tile = tiles[i, col];
-            if (tile == null) break;
-            Sprite sprite = tile.GetComponentInChildren<SpriteRenderer>()?.sprite;
-            if (sprite == null || sprite != dropSprite) break;
-            count++;
-        }
-
-        if (count >= 3) return true;
-
-        // No match found
-        return false;
+        int dropType = boardGraph[row, col];
+        return dropType == boardGraph[row - 1, col] && dropType == boardGraph[row - 2, col];
     }
 }

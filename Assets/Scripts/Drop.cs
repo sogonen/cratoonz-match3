@@ -23,7 +23,6 @@ public class Drop : MonoBehaviour
             if (transform.position == targetPos)
             {
                 isMoving = false;
-                BoardManager.instance.FillEmptyTiles();
             }
         }
     }
