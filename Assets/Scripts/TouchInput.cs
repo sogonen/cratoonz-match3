@@ -10,6 +10,7 @@ public class TouchInput : MonoBehaviour, IDragHandler, IEndDragHandler
     private Vector2 startTouchPos;
     private Vector2 endTouchPos;
 
+    private ICommand swipeCommand;
     private Camera mainCamera;
     private BoardManager boardManager;
 
@@ -18,7 +19,6 @@ public class TouchInput : MonoBehaviour, IDragHandler, IEndDragHandler
         mainCamera = Camera.main;
         boardManager = BoardManager.instance;
     }
-
     public void OnDrag(PointerEventData eventData)
     {
         if (eventData.pointerEnter != null && eventData.pointerEnter.tag == "Drop" && eventData.pointerEnter.GetComponent<Drop>().isMovable)
@@ -45,22 +45,26 @@ public class TouchInput : MonoBehaviour, IDragHandler, IEndDragHandler
                 {
                     if (swipeDirection.x > 0f && col < boardManager.numCols - 1)
                     {
-                        boardManager.SwapDrops(row, col, row, col + 1);
+                        swipeCommand = new SwipeCommand(boardManager, row, col, row, col + 1);
+                        swipeCommand.Execute();
                     }
                     else if (swipeDirection.x < 0f && col > 0)
                     {
-                        boardManager.SwapDrops(row, col, row, col - 1);
+                        swipeCommand = new SwipeCommand(boardManager, row, col, row, col - 1);
+                        swipeCommand.Execute();
                     }
                 }
                 else
                 {
                     if (swipeDirection.y > 0f && row < boardManager.numRows - 1)
                     {
-                        boardManager.SwapDrops(row, col, row + 1, col);
+                        swipeCommand = new SwipeCommand(boardManager, row, col, row + 1, col);
+                        swipeCommand.Execute();
                     }
                     else if (swipeDirection.y < 0f && row > 0)
                     {
-                        boardManager.SwapDrops(row, col, row - 1, col);
+                        swipeCommand = new SwipeCommand(boardManager, row, col, row - 1, col);
+                        swipeCommand.Execute();
                     }
                 }
             }

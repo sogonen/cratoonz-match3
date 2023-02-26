@@ -257,7 +257,7 @@ public class BoardManager : MonoBehaviour
             boardGraph[row1, col1] = boardGraph[row2, col2];
             boardGraph[row2, col2] = temp;
 
-            // Check for matches
+            Check for matches
             if (MatchesOnBoard())
             {
                 RemoveMatches();
@@ -272,8 +272,15 @@ public class BoardManager : MonoBehaviour
                 // Animate the swap back
                 GameObject drop1 = GetDrop(row1, col1);
                 GameObject drop2 = GetDrop(row2, col2);
-                //AnimateSwap(drop1, drop2);
+                AnimateSwap(drop1, drop2);
             }
         }
+    }
+    
+    public void AnimateSwap(GameObject drop1, GameObject drop2)
+    {
+        // Animate the swap back to the original position
+        drop1.transform.DOMove(drop2.transform.position, 0.3f);
+        drop2.transform.DOMove(drop1.transform.position, 0.3f);
     }
 }
