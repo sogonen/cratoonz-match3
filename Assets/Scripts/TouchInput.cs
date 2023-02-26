@@ -1,78 +1,81 @@
-using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
-public class TouchInput : MonoBehaviour
+public class TouchInput : MonoBehaviour, IDragHandler, IEndDragHandler
 {
-    public float minSwipeDistance = 20f;
+    public float swipeThreshold = 50f;
 
-    private Vector2 swipeStartPosition;
-    private Vector2 swipeEndPosition;
-    private bool isSwiping = false;
-    
-    private BoardManager board;
+    private Vector2 startTouchPos;
+    private Vector2 endTouchPos;
+
+    private Camera mainCamera;
+    private BoardManager boardManager;
 
     private void Start()
     {
-        board = BoardManager.instance;
+        mainCamera = Camera.main;
+        boardManager = BoardManager.instance;
     }
 
-    void Update()
+    public void OnDrag(PointerEventData eventData)
     {
-        if (Input.touchCount > 0)
+        if (eventData.pointerEnter != null && eventData.pointerEnter.tag == "Drop" && eventData.pointerEnter.GetComponent<Drop>().isMovable)
         {
-            Touch touch = Input.GetTouch(0);
+            Vector2 worldPos = mainCamera.ScreenToWorldPoint(eventData.position);
+            eventData.pointerEnter.transform.position = worldPos;
+        }
+    }
 
-            if (touch.phase == TouchPhase.Began)
-            {
-                swipeStartPosition = touch.position;
-                isSwiping = true;
-            }
-            else if (touch.phase == TouchPhase.Moved && isSwiping)
-            {
-                swipeEndPosition = touch.position;
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        if (eventData.pointerEnter != null && eventData.pointerEnter.tag == "Drop" && eventData.pointerEnter.GetComponent<Drop>().isMovable)
+        {
+            endTouchPos = eventData.position;
+            Vector2 swipeDirection = endTouchPos - startTouchPos;
+            float swipeMagnitude = swipeDirection.magnitude;
 
-                // Check if the swipe distance is greater than the minimum distance
-                float distance = Vector2.Distance(swipeStartPosition, swipeEndPosition);
-                if (distance >= minSwipeDistance)
+            if (swipeMagnitude > swipeThreshold)
+            {
+                int col = eventData.pointerEnter.GetComponent<Drop>().col;
+                int row = eventData.pointerEnter.GetComponent<Drop>().row;
+
+                if (Mathf.Abs(swipeDirection.x) > Mathf.Abs(swipeDirection.y))
                 {
-                    // Calculate the swipe direction
-                    Vector2 direction = swipeEndPosition - swipeStartPosition;
-                    direction.Normalize();
-
-                    // Check if the swipe direction is valid
-                    if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
+                    if (swipeDirection.x > 0f && col < boardManager.numCols - 1)
                     {
-                        // Swipe left or right
-                        int col1 = (int)Mathf.Round(swipeStartPosition.x / Screen.width * board.numCols);
-                        int col2 = (int)Mathf.Round(swipeEndPosition.x / Screen.width * board.numCols);
-
-                        if (Mathf.Abs(col1 - col2) == 1)
-                        {
-                            int row = (int)Mathf.Round(swipeStartPosition.y / Screen.height * board.numRows);
-                            board.SwapDrops(row, col1, row, col2);
-                        }
+                        boardManager.SwapDrops(row, col, row, col + 1);
                     }
-                    else
+                    else if (swipeDirection.x < 0f && col > 0)
                     {
-                        // Swipe up or down
-                        int row1 = (int)Mathf.Round(swipeStartPosition.y / Screen.height * board.numRows);
-                        int row2 = (int)Mathf.Round(swipeEndPosition.y / Screen.height * board.numRows);
-
-                        if (Mathf.Abs(row1 - row2) == 1)
-                        {
-                            int col = (int)Mathf.Round(swipeStartPosition.x / Screen.width * board.numCols);
-                            board.SwapDrops(row1, col, row2, col);
-                        }
+                        boardManager.SwapDrops(row, col, row, col - 1);
                     }
-
-                    isSwiping = false;
+                }
+                else
+                {
+                    if (swipeDirection.y > 0f && row < boardManager.numRows - 1)
+                    {
+                        boardManager.SwapDrops(row, col, row + 1, col);
+                    }
+                    else if (swipeDirection.y < 0f && row > 0)
+                    {
+                        boardManager.SwapDrops(row, col, row - 1, col);
+                    }
                 }
             }
-            else if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+            else
             {
-                isSwiping = false;
+                eventData.pointerEnter.GetComponent<Drop>().ReturnToStartPosition();
             }
         }
     }
 
+    private void Update()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            startTouchPos = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+        }
+    }
 }

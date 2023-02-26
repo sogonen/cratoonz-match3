@@ -1,40 +1,40 @@
+using System.Collections;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class Drop : MonoBehaviour
 {
     public int row;
     public int col;
     public int type;
-    public int targetRow;
-    public int targetCol;
-    public float moveSpeed = 10.0f;
+    public bool isMovable = true;
     public SpriteRenderer spriteRenderer;
     
-    private bool isMoving;
+    private Vector2 startPosition;
 
-    void Update()
+    private void Awake()
     {
-        if (isMoving)
-        {
-            Vector3 targetPos = new Vector3(targetCol * BoardManager.instance.tileSize, targetRow * BoardManager.instance.tileSize, 0.0f);
-            transform.position = Vector3.MoveTowards(transform.position, targetPos, moveSpeed * Time.deltaTime);
-
-            if (transform.position == targetPos)
-            {
-                isMoving = false;
-            }
-        }
+        startPosition = transform.position;
     }
 
-    public void MoveTo(int newRow, int newCol)
+    public void ReturnToStartPosition()
     {
-        if (!isMoving)
+        isMovable = false;
+        StartCoroutine(MoveToPosition(startPosition));
+    }
+
+    private IEnumerator MoveToPosition(Vector2 targetPosition)
+    {
+        float t = 0f;
+
+        while (t < 1f)
         {
-            targetRow = newRow;
-            targetCol = newCol;
-            isMoving = true;
+            t += Time.deltaTime * 4f;
+            transform.position = Vector2.Lerp(transform.position, targetPosition, t);
+            yield return null;
         }
+
+        transform.position = targetPosition;
+        isMovable = true;
     }
     
     public void SetDrop(int newRow, int newCol, int newType, Sprite newSprite)
@@ -44,11 +44,5 @@ public class Drop : MonoBehaviour
         col = newCol;
         type = newType;
         spriteRenderer.sprite = newSprite;
-    }
-
-    public void ScaleAndDestroy()
-    {
-        transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-        Destroy(gameObject, 0.2f);
     }
 }

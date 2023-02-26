@@ -1,48 +1,49 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class DropPool : MonoBehaviour
 {
     public Sprite[] dropSprites;
     public GameObject dropPrefab;
-    public int poolSize = 100;
+    public int poolSize;
 
-    private List<GameObject> dropPool;
+    private Queue<GameObject> pool;
 
-    void Awake()
+    private void Awake()
     {
+        // Create the drop pool
+        pool = new Queue<GameObject>();
         CreatePool();
     }
 
-    void CreatePool()
+    private void CreatePool()
     {
-        dropPool = new List<GameObject>();
-        GameObject drop = Instantiate(dropPrefab, transform);
-        drop.SetActive(false);
-        dropPool.Add(drop);
-
+        // Instantiate the drop objects and add them to the pool
+        for (int i = 0; i < poolSize; i++)
+        {
+            GameObject drop = Instantiate(dropPrefab, transform);
+            drop.SetActive(false);
+            pool.Enqueue(drop);
+        }
     }
 
-    public GameObject GetDrop(int dropType)
+    public GameObject GetDrop()
     {
-        for (int i = 0; i < dropPool.Count; i++)
+        if (pool.Count == 0)
         {
-            if (!dropPool[i].activeInHierarchy)
-            {
-                dropPool[i].SetActive(true);
-                return dropPool[i];
-            }
+            CreatePool();
         }
-        GameObject dropObject = Instantiate(dropPrefab, transform);
-        dropPool.Add(dropObject);
-        return dropObject;
+
+        GameObject drop = pool.Dequeue();
+        drop.SetActive(true);
+        return drop;
     }
 
     public void ReturnDrop(GameObject drop)
     {
-        drop.transform.SetParent(this.transform);
+        drop.transform.SetParent(transform);
         drop.SetActive(false);
+        pool.Enqueue(drop);
     }
 }

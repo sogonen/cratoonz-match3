@@ -77,8 +77,9 @@ public class BoardManager : MonoBehaviour
             {
                 GameObject tile = tiles[row, col];
                 int dropType = boardGraph[row, col];
-                GameObject drop = dropPool.GetDrop(dropType);
-                drop.transform.SetParent(tiles[row, col].transform);
+                GameObject drop = dropPool.GetDrop();
+
+                drop.transform.SetParent(tile.transform);
                 drop.transform.localPosition = new Vector3(0, 0, -1);
                 drops[row, col] = drop;
                 drop.GetComponent<Drop>().SetDrop(row, col, dropType, dropPool.dropSprites[dropType]);
